@@ -331,15 +331,15 @@ function renderSettings() {
     ${sw('voice', '音声ガイド', '動きの名前・回数・かけ声')}
     <div class="tg"><span>読み上げの速さ</span><input type="range" id="vRate" min="0.8" max="1.4" step="0.05" value="${s.rate}"></div>
     <div class="tg"><span>テンポ<small>1回 = 2拍。プレイ中も「ひと休み」から変えられます</small></span><span class="seg" id="vLv">${LEVELS.map(l => `<button data-l="${l.key}" class="${s.level === l.key ? 'on' : ''}">${l.name}<em>${l.bpm}</em></button>`).join('')}</span></div>
-    <div class="tg"><span>場面の映像<small>実写：本物の映像（${CLIPS.length}本）と写真（${PHOTOS.length}組）。イラスト：アニメーション</small></span><span class="seg" id="vLook">${[['real', '実写'], ['illust', 'イラスト']].map(([k, n]) => `<button data-look="${k}" class="${look() === k ? 'on' : ''}">${n}</button>`).join('')}</span></div>
+    <div class="tg"><span>場面の絵<small>写真：Canva で作った場面（${PHOTOS.length}組）。イラスト：アニメーション</small></span><span class="seg" id="vLook">${[['real', '写真'], ['illust', 'イラスト']].map(([k, n]) => `<button data-look="${k}" class="${look() === k ? 'on' : ''}">${n}</button>`).join('')}</span></div>
     ${mineRow()}
     <div class="tg"><span>場面の切りかえ<small>4回ごとがおすすめ。2回ごとはテンポよく次々に</small></span><span class="seg" id="vShow">${[4, 2].map(n => `<button data-show="${n}" class="${(s.show || 4) === n ? 'on' : ''}">${n}回ごと</button>`).join('')}</span></div>
     ${sw('quiet', '静音モード', 'ジャンプする種目を入れません')}
     ${IS_ART ? '<div class="tg"><span>カメラで動きをチェック<small>GitHub Pages で公開した版で使えます</small></span></div>' : sw('cam', 'カメラで動きをチェック', '場面に合わせて動けたかを数えます（映像は保存・送信しません）')}
     <div class="tg"><span>体重（消費カロリーの目安に使います）</span><span><input type="number" id="vW" min="20" max="200" value="${s.weight}"> kg</span></div>
     </div>
-    <p class="note">実写の映像は Wikimedia Commons で自由に使えるライセンス（CC0・パブリックドメイン・CC BY・CC BY-SA）で公開されているものを、切り出して使っています。イラスト・音楽・効果音は、このアプリがその場で描いて鳴らしています。体調に合わせて無理をせず、痛みを感じたらすぐに中止してください。</p>
-    <details class="credits"><summary>映像・写真のクレジット（映像 ${CLIPS.length}本・写真 ${PHOTOS.reduce((a, s) => a + s.images.length, 0)}枚）</summary><ul>${CLIPS.map(c => `<li><b>${esc(c.name)}</b><span>${esc(c.credit.author || '作者不明')}・${esc(c.credit.license)}・<a href="${esc(c.credit.page)}" target="_blank" rel="noopener">${esc(c.credit.file.replace(/^File:/, ''))}</a>（${esc(c.credit.changes || '切り出し・再エンコード')}）</span></li>`).join('')}${PHOTOS.flatMap(s => (s.credit ? [s.credit] : s.images.map(p => p.credit)).map(cr => `<li><b>${esc(s.name)}</b><span>${esc(cr.author || '作者不明')}・${esc(cr.license)}・${cr.page ? `<a href="${esc(cr.page)}" target="_blank" rel="noopener">${esc(cr.file.replace(/^File:/, ''))}</a>` : esc(cr.file)}（${esc(cr.changes || '縮小')}）</span></li>`)).join('')}</ul></details>
+    <p class="note">場面の写真とお手本の3D人形は、このアプリのために Canva の画像生成で作ったものです。イラスト・音楽・効果音は、このアプリがその場で描いて鳴らしています。体調に合わせて無理をせず、痛みを感じたらすぐに中止してください。</p>
+    <details class="credits"><summary>${CLIPS.length ? `映像・写真のクレジット（映像 ${CLIPS.length}本・写真 ${PHOTOS.reduce((a, s) => a + s.images.length, 0)}枚）` : `場面の写真（${PHOTOS.length}組・${PHOTOS.reduce((a, s) => a + s.images.length, 0)}枚）`}</summary><ul>${CLIPS.map(c => `<li><b>${esc(c.name)}</b><span>${esc(c.credit.author || '作者不明')}・${esc(c.credit.license)}・<a href="${esc(c.credit.page)}" target="_blank" rel="noopener">${esc(c.credit.file.replace(/^File:/, ''))}</a>（${esc(c.credit.changes || '切り出し・再エンコード')}）</span></li>`).join('')}${PHOTOS.flatMap(s => (s.credit ? [s.credit] : s.images.map(p => p.credit)).map(cr => `<li><b>${esc(s.name)}</b><span>${esc(cr.author || '作者不明')}・${esc(cr.license)}・${cr.page ? `<a href="${esc(cr.page)}" target="_blank" rel="noopener">${esc(cr.file.replace(/^File:/, ''))}</a>` : esc(cr.file)}（${esc(cr.changes || '縮小')}）</span></li>`)).join('')}</ul></details>
     <button class="danger" id="vReset">記録をすべて消す</button>`;
 }
 $('#setBody').addEventListener('input', e => {

@@ -26,7 +26,7 @@ fs.mkdirSync('dist', { recursive: true });
 fs.writeFileSync('dist/preview.html', out);
 // 実写の映像（プレビューといっしょに置く）
 fs.rmSync('dist/clips', { recursive: true, force: true }); fs.mkdirSync('dist/clips', { recursive: true });
-let n = 0, kb = 0; for (const f of fs.readdirSync('clips')) if (f.endsWith('.mp4')) { fs.copyFileSync('clips/' + f, 'dist/clips/' + f); n++; kb += fs.statSync('clips/' + f).size / 1024; }
+let n = 0, kb = 0; if (fs.existsSync('clips')) for (const f of fs.readdirSync('clips')) if (f.endsWith('.mp4')) { fs.copyFileSync('clips/' + f, 'dist/clips/' + f); n++; kb += fs.statSync('clips/' + f).size / 1024; }
 console.log('dist/clips', n, 'files', (kb / 1024).toFixed(1) + 'MB');
 fs.rmSync('dist/photos', { recursive: true, force: true }); fs.mkdirSync('dist/photos', { recursive: true });
 let np = 0, kp = 0; if (fs.existsSync('photos')) for (const f of fs.readdirSync('photos')) if (/\.(jpg|webp)$/.test(f)) { fs.copyFileSync('photos/' + f, 'dist/photos/' + f); np++; kp += fs.statSync('photos/' + f).size / 1024; }
