@@ -1,0 +1,24 @@
+<!doctype html><meta charset=utf-8><title>お手本の線画</title>
+<style>body{margin:0;background:#000;color:#fff;font:12px system-ui}canvas{display:block}</style>
+<canvas id=c></canvas>
+<script type=module>
+// ?m=hit1,punch,... &ph=0,0.25,0.5,0.75 &w=180 &h=260 &ghost=1
+import { MOTIONS, rig, jointsAtRep } from '../js/motions.js';
+import { drawFigure, coachFrames } from '../js/figure.js';
+const q = new URLSearchParams(location.search);
+const keys = (q.get('m') || 'hit1,punch,clap,squat,kick,jack,march,stir1,row,throw').split(',');
+const phs = (q.get('ph') || '0,0.2,0.45,0.7').split(',').map(Number);
+const W = +(q.get('w') || 180), H = +(q.get('h') || 260), gh = q.get('ghost') !== '0';
+const cv = document.getElementById('c'), d = 2; cv.width = W * phs.length * d; cv.height = H * keys.length * d;
+cv.style.width = W * phs.length + 'px'; cv.style.height = H * keys.length + 'px';
+const c = cv.getContext('2d'); c.scale(d, d); c.fillStyle = '#000'; c.fillRect(0, 0, W * phs.length, H * keys.length);
+keys.forEach((k, r) => {
+  const m = MOTIONS.find(x => x.key === k); if (!m) return; const R = rig(m, 'R');
+  phs.forEach((ph, i) => {
+    const rf = 2 + ph, F = coachFrames(R, rf);
+    drawFigure(c, F.J, { x: W * i + W / 2, y: H * r + H * 0.9, h: H * 0.72, view: m.view, ...F, ghosts: gh ? F.ghosts : null, impact: ph < 0.15 ? ph / 0.15 : undefined });
+    c.fillStyle = '#888'; c.fillText(`${m.name} ${ph}`, W * i + 4, H * r + 12);
+  });
+});
+document.title = 'ready';
+</script>

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>実写の場面を作る</title>
+<style>
+  :root { --bg: #0e0d14; --panel: #1a1824; --line: #2e2b3d; --text: #f4f2fa; --muted: #a29fb3; --accent: #ffd23f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.6 system-ui, "Hiragino Sans", "Noto Sans JP", sans-serif; padding: 16px max(16px, env(safe-area-inset-right)) 40px max(16px, env(safe-area-inset-left)); }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.lead { color: var(--muted); margin: 0 0 14px; max-width: 70ch; }
+  .wrap { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; min-width: 0; }
+  .vbox { position: relative; background: #000; border-radius: 8px; overflow: hidden; }
+  video { display: block; width: 100%; max-height: 60vh; background: #000; }
+  .focus { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border: 2px solid var(--accent); border-radius: 50%; pointer-events: none; }
+  .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .12s; }
+  canvas#tl { width: 100%; height: 70px; display: block; margin-top: 8px; background: #000; border-radius: 6px; cursor: pointer; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+  button, select, input { font: inherit; color: var(--text); background: #262335; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+  button { cursor: pointer; } button.main { background: var(--accent); color: #1a1406; border: 0; font-weight: 800; }
+  label { display: grid; gap: 2px; font-size: 12.5px; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .hits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .hits span { display: inline-flex; gap: 4px; align-items: center; background: #262335; border: 1px solid var(--line); border-radius: 999px; padding: 2px 4px 2px 10px; font-variant-numeric: tabular-nums; }
+  .hits button { padding: 0 7px; border-radius: 999px; font-size: 12px; }
+  textarea { width: 100%; min-height: 120px; font: 12px/1.5 ui-monospace, monospace; color: var(--text); background: #000; border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+  code { background: #000; padding: 1px 5px; border-radius: 4px; }
+  .muted { color: var(--muted); font-size: 12.5px; }
+</style>
+<h1>実写の場面を作る</h1>
+<p class="lead">自分で撮った動画（たとえば、にんじんをトントン切る手元）を、アプリの「実写の場面」にするための道具です。動画を選んで、映像の中で<b>当たる瞬間</b>（包丁がまな板に当たる、など）を3回以上しるしをつけ、下の1行を <code>js/clips.js</code> に追加します。</p>
+<div class="wrap">
+  <div class="card">
+    <div class="row"><input type="file" id="file" accept="video/*"><select id="pick"><option value="">登録ずみの映像を開く…</option></select></div>
+    <div class="vbox" id="vbox"><video id="v" playsinline muted controls></video><div class="focus" id="fx" hidden></div><div class="flash" id="fl"></div></div>
+    <canvas id="tl"></canvas>
+    <div class="row">
+      <button class="main" id="add">ここで当たる（H）</button>
+      <button id="back">◀ 1コマ（←）</button><button id="fwd">1コマ ▶（→）</button>
+      <button id="slow">0.5倍で再生</button>
+      <button id="auto">音から自動で探す</button>
+    </div>
+    <div class="hits" id="hits"></div>
+    <p class="muted">映像をクリックすると、動きの中心（画面に合わせて切り取るときの目安）を決められます。</p>
+  </div>
+  <div class="card">
+    <div class="grid">
+      <label>id（英数字）<input id="fid" value="my-chop-1"></label>
+      <label>動き<select id="fact"></select></label>
+      <label>場面の名前（12文字まで）<input id="fname" value="にんじんを切る" maxlength="12"></label>
+      <label>短い名前（7文字まで）<input id="fshort" value="にんじん" maxlength="7"></label>
+      <label>効果音<select id="fsfx"></select></label>
+      <label>合うお手本<span class="row" style="margin:0"><label style="display:flex;gap:4px"><input type="checkbox" value="one" checked>片手</label><label style="display:flex;gap:4px"><input type="checkbox" value="alt" checked>交互</label><label style="display:flex;gap:4px"><input type="checkbox" value="both">両手・全身</label></span></label>
+      <label>作者<input id="fauth" value="自分で撮影"></label>
+      <label>ライセンス<input id="flic" value="CC0"></label>
+    </div>
+    <div class="row"><label>テンポ<select id="bpm"><option>96</option><option selected>112</option><option>126</option></select></label><button class="main" id="test">拍に合わせて試す</button><button id="stop">止める</button></div>
+    <p class="muted">「拍に合わせて試す」は、アプリと同じしくみで、当たる瞬間を拍（カチッ）に合わせて再生します。ずれて見えたら、しるしを1コマずつ動かしてください。</p>
+    <textarea id="out" readonly></textarea>
+    <div class="row"><button id="copy">コピー</button><span class="muted" id="msg"></span></div>
+    <p class="muted">動画は H.264 の MP4 にして <code>clips/</code> フォルダに置きます。おすすめの変換（ffmpeg）：<br><code id="ff">ffmpeg -i input.mov -t 6 -vf "scale=640:-2,fps=30" -an -c:v libx264 -crf 30 -g 12 -movflags +faststart clips/my-chop-1.mp4</code></p>
+  </div>
+</div>
+<script type="module">
+import { CLIPS, srcAt } from '../js/real.js';
+import { SFX_NAMES } from '../js/sfx.js';
+import { ACTS } from '../js/stage.js';
+const $ = s => document.querySelector(s), v = $('#v');
+let hits = [], focus = [0.5, 0.5], fileName = '', env = null, dur = 0, base = null;
+$('#fact').innerHTML = Object.entries(ACTS).map(([k, a]) => `<option value="${k}">${a.name}（${k}）</option>`).join('');
+$('#fsfx').innerHTML = SFX_NAMES.map(n => `<option ${n === 'chop' ? 'selected' : ''}>${n}</option>`).join('');
+$('#pick').innerHTML += CLIPS.map(c => `<option value="${c.id}">${c.name}（${c.id}）</option>`).join('');
+const FR = 1 / 30;
+function render() {
+  hits.sort((a, b) => a - b);
+  $('#hits').innerHTML = hits.map((h, i) => `<span>${h.toFixed(3)}s <button data-i="${i}" data-d="-1">−</button><button data-i="${i}" data-d="1">＋</button><button data-i="${i}" data-x="1">×</button></span>`).join('') || '<span class="muted" style="border:0;background:none">まだしるしがありません</span>';
+  const modes = [...document.querySelectorAll('input[type=checkbox]:checked')].map(x => x.value);
+  const id = $('#fid').value.trim() || 'my-clip';
+  const o = { id, act: $('#fact').value, modes, name: $('#fname').value, short: $('#fshort').value, file: id + '.mp4', w: v.videoWidth || 640, h: v.videoHeight || 360, dur: +(dur || 0).toFixed(3), hits: hits.map(h => +h.toFixed(3)), sfx: $('#fsfx').value, focus: focus.map(x => +x.toFixed(2)), quality: 4,
+    credit: { file: fileName, page: base ? base.page : '', author: $('#fauth').value, license: $('#flic').value, license_url: base ? base.license_url : '', changes: '切り出し・縮小・再エンコード・音声なし' } };
+  $('#out').value = JSON.stringify(o) + ',';
+  $('#ff').textContent = `ffmpeg -i "${fileName || 'input.mov'}" -vf "scale=640:-2,fps=30" -an -c:v libx264 -crf 30 -g 12 -movflags +faststart clips/${id}.mp4`;
+  $('#msg').textContent = hits.length < 3 ? '当たる瞬間を3つ以上つけてください' : `${hits.length}回`;
+  drawTL();
+}
+function drawTL() {
+  const c = $('#tl'), d = devicePixelRatio || 1, W = c.clientWidth, H = c.clientHeight; c.width = W * d; c.height = H * d;
+  const x = c.getContext('2d'); x.scale(d, d); x.fillStyle = '#000'; x.fillRect(0, 0, W, H);
+  if (env && dur) { x.fillStyle = '#4b4566'; for (let i = 0; i < env.length; i++) { const h = env[i] * (H - 10); x.fillRect(i / env.length * W, H - h, Math.max(1, W / env.length), h); } }
+  if (dur) {
+    x.fillStyle = '#ffd23f'; for (const h of hits) x.fillRect(h / dur * W - 1, 0, 3, H);
+    x.fillStyle = '#ffffff'; x.fillRect(v.currentTime / dur * W, 0, 1, H);
+  }
+}
+function load(url, name, b = null) { fileName = name; hits = []; env = null; base = b; v.src = url; v.load(); }
+$('#file').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; load(URL.createObjectURL(f), f.name); $('#fid').value = f.name.replace(/\.[^.]+$/, '').replace(/[^A-Za-z0-9-]+/g, '-').toLowerCase().slice(0, 30) || 'my-clip'; v._file = f; render(); });
+$('#pick').addEventListener('change', e => { const c = CLIPS.find(c => c.id === e.target.value); if (!c) return; load('../clips/' + c.file, c.credit.file, c.credit); setTimeout(() => { hits = [...c.hits]; focus = c.focus || [0.5, 0.5]; $('#fid').value = c.id; $('#fname').value = c.name; $('#fshort').value = c.short; $('#fact').value = c.act; $('#fsfx').value = c.sfx || 'chop'; document.querySelectorAll('input[type=checkbox]').forEach(b => b.checked = c.modes.includes(b.value)); $('#fauth').value = c.credit.author; $('#flic').value = c.credit.license; showFocus(); render(); }, 50); });
+v.addEventListener('loadedmetadata', () => { dur = v.duration; render(); });
+v.addEventListener('timeupdate', drawTL);
+const addHit = () => { hits.push(v.currentTime); render(); };
+$('#add').onclick = addHit;
+$('#back').onclick = () => { v.pause(); v.currentTime = Math.max(0, v.currentTime - FR); };
+$('#fwd').onclick = () => { v.pause(); v.currentTime = Math.min(dur, v.currentTime + FR); };
+$('#slow').onclick = () => { v.playbackRate = 0.5; v.play(); };
+addEventListener('keydown', e => { if (e.target.tagName === 'INPUT') return; if (e.key === 'h' || e.key === 'H') addHit(); if (e.key === 'ArrowLeft') $('#back').click(); if (e.key === 'ArrowRight') $('#fwd').click(); if (e.key === ' ') { e.preventDefault(); v.paused ? v.play() : v.pause(); } });
+$('#hits').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const i = +b.dataset.i; if (b.dataset.x) hits.splice(i, 1); else { hits[i] = Math.max(0, hits[i] + (+b.dataset.d) * FR); v.pause(); v.currentTime = hits[i]; } render(); });
+$('#tl').addEventListener('click', e => { const r = e.target.getBoundingClientRect(); if (dur) v.currentTime = (e.clientX - r.left) / r.width * dur; });
+function showFocus() { const fx = $('#fx'); fx.hidden = false; const r = v.getBoundingClientRect(); fx.style.left = focus[0] * r.width + 'px'; fx.style.top = focus[1] * r.height + 'px'; }
+$('#vbox').addEventListener('click', e => { if (e.target !== v || !v.videoWidth) return; const r = v.getBoundingClientRect(); if (e.clientY - r.top > r.height - 40) return; focus = [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; showFocus(); render(); });
+document.querySelectorAll('input, select').forEach(x => x.addEventListener('input', render));
+// 音から当たる瞬間を探す（急に大きくなる音）
+$('#auto').onclick = async () => {
+  const f = v._file; if (!f) { $('#msg').textContent = '自分の動画ファイルを選んだときに使えます'; return; }
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const buf = await ac.decodeAudioData(await f.arrayBuffer()); const y = buf.getChannelData(0), sr = buf.sampleRate, hop = Math.round(sr * 0.01), n = 1024;
+    const flux = [], e2 = []; let prev = null;
+    for (let i = 0; i + n < y.length; i += hop) {
+      let s = 0; for (let k = 0; k < n; k += 2) s += y[i + k] * y[i + k];
+      const val = Math.log1p(1000 * s / (n / 2)); e2.push(val); flux.push(prev === null ? 0 : Math.max(0, val - prev)); prev = val;
+    }
+    const mx = Math.max(...flux) || 1, me = Math.max(...e2) || 1; env = e2.map(x => x / me);
+    const thr = 0.25 * mx, out = [];
+    for (let i = 1; i < flux.length - 1; i++) if (flux[i] > thr && flux[i] >= flux[i - 1] && flux[i] >= flux[i + 1] && (!out.length || (i * hop / sr) - out[out.length - 1] > 0.18)) out.push(i * hop / sr);
+    hits = out; render(); $('#msg').textContent = `${out.length}か所みつかりました。ずれていたら1コマずつ直してください`;
+  } catch (err) { $('#msg').textContent = '音を読み取れませんでした（音のない動画かもしれません）。手でしるしをつけてください'; }
+};
+// 拍に合わせて試す（アプリと同じ srcAt を使う）
+let raf = 0, actx = null;
+$('#test').onclick = () => {
+  if (hits.length < 2) { $('#msg').textContent = '当たる瞬間を2つ以上つけてください'; return; }
+  cancelAnimationFrame(raf); actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume();
+  const spb = 60 / +$('#bpm').value, rpb = 2, c = { hits: [...hits].sort((a, b) => a - b), dur };
+  const t0 = actx.currentTime + 0.3, clipOf = k => ({ hits: [rpb * (2 * k + 1), rpb * (2 * k + 2)], round: 1 + (k >= 2 ? 1 : 0), sub: k % 2 });
+  for (let j = 0; j < 8; j++) { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = 1500; g.gain.setValueAtTime(0.25, t0 + rpb * (j + 1) * spb); g.gain.exponentialRampToValueAtTime(0.001, t0 + rpb * (j + 1) * spb + 0.05); o.connect(g).connect(actx.destination); o.start(t0 + rpb * (j + 1) * spb); o.stop(t0 + rpb * (j + 1) * spb + 0.06); }
+  let fired = -1; v.muted = true; v.pause();
+  const loop = () => {
+    const beat = (actx.currentTime - t0) / spb, k = Math.min(3, Math.max(0, Math.floor((beat - rpb * 0.5) / (2 * rpb))));
+    if (beat > rpb * 8.6) { v.pause(); return; }
+    const st = srcAt(c, clipOf(k), beat, spb);
+    if (v.paused) { v.currentTime = st.x; v.play().catch(() => { }); }
+    const err = v.currentTime - st.x; if (Math.abs(err) > 0.28) v.currentTime = st.x; else v.playbackRate = Math.min(3, Math.max(0.25, st.r * (1 - err * 2)));
+    const j = Math.floor(beat / rpb) - 1; if (j > fired && j >= 0 && beat - rpb * (j + 1) < 0.2) { fired = j; const fl = $('#fl'); fl.style.opacity = 0.35; setTimeout(() => fl.style.opacity = 0, 90); }
+    raf = requestAnimationFrame(loop);
+  };
+  raf = requestAnimationFrame(loop);
+};
+$('#stop').onclick = () => { cancelAnimationFrame(raf); v.pause(); v.playbackRate = 1; };
+$('#copy').onclick = async () => { try { await navigator.clipboard.writeText($('#out').value); $('#msg').textContent = 'コピーしました'; } catch (e) { $('#out').select(); $('#msg').textContent = '選択しました（コピーしてください）'; } };
+render();
+</script>

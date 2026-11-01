@@ -1,0 +1,17 @@
+{
+  "name": "immerse-fit",
+  "version": "1.0.0",
+  "description": "没入型エクササイズ：お手本をまねすると場面が動く（全身・上半身・下半身・腕だけ 各500種目）",
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "python3 -m http.server 8080"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  },
+  "type": "module",
+  "private": true
+}

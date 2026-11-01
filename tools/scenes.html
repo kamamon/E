@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>場面チェック（開発用）</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style>
+  body { margin: 0; background: #14112a; color: #fff; font: 12px "Zen Kaku Gothic New", sans-serif; }
+  #sheet { display: grid; gap: 6px; padding: 8px; }
+  .row { display: flex; gap: 6px; align-items: flex-start; }
+  .lab { width: 150px; flex: none; font-size: 12px; line-height: 1.35; word-break: break-all; }
+  .lab b { display: block; font-size: 13px; }
+  .lab .bad { color: #ff7b7b; }
+  canvas { display: block; background: #000; border-radius: 6px; }
+  .cell { position: relative; }
+  .cell i { position: absolute; left: 4px; top: 2px; font-style: normal; font-size: 10px; color: #fff; text-shadow: 0 0 3px #000; }
+  #play { position: fixed; inset: 0; }
+  #play canvas { width: 100%; height: 100%; border-radius: 0; }
+  #hud { position: fixed; left: 10px; bottom: 10px; font-size: 14px; background: rgba(0,0,0,.5); padding: 6px 10px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<div id="sheet"></div>
+<script type="module">
+import { expand } from '../js/scenes/registry.js';
+import { Stage, ACTS } from '../js/stage.js';
+const q = new URLSearchParams(location.search);
+// file= を指定すると、そのファイルだけを読む（ほかのファイルのエラーに巻きこまれない）
+const SCENES = q.get('file') ? (await Promise.all(q.get('file').split(',').map(async f => expand(f, (await import(`../js/scenes/${f}.js?v=${Date.now()}`)).default)))).flat() : (await import('../js/scenes/index.js')).SCENES;
+const errors = window.errors = [];
+const origWarn = console.warn; console.warn = (...a) => { errors.push(a.map(String).join(' ')); origWarn(...a); };
+
+function pick() {
+  let list = SCENES;
+  if (q.get('file')) { const fs = q.get('file').split(','); list = list.filter(s => fs.includes(s.file)); }
+  if (q.get('act')) list = list.filter(s => s.acts.includes(q.get('act')));
+  if (q.get('ids')) { const ids = q.get('ids').split(','); list = list.filter(s => ids.some(i => s.id === i || s.id.startsWith(i + ':'))); }
+  const from = +(q.get('from') || 0), n = +(q.get('n') || 999);
+  return list.slice(from, from + n);
+}
+function clipFor(inst, mode, side) {
+  const lateral = inst.acts.some(a => ACTS[a] && ACTS[a].lateral);
+  const sides = mode === 'alt' ? (side === 'L' ? ['L', 'R'] : ['R', 'L']) : mode === 'both' ? ['B', 'B'] : [side, side];
+  const dirs = lateral ? (side === 'L' ? ['L', 'R'] : ['R', 'L']) : sides;
+  return { inst, act: inst.acts[0], mode, sides, dirs, hits: [1.1, 3.1], b0: 0, b1: 4, seed: 7, round: side === 'L' ? 2 : 1, idx: 0 };
+}
+const SPB = 60 / 112, DT = 1 / 60;
+// 時間を進めながら、指定の位相でスナップショットを撮る
+function snap(inst, mode, side, w, h, phases, draw) {
+  const cv = document.createElement('canvas'); const st = new Stage(cv); st.resize(w, h, 1);
+  const clip = clipFor(inst, mode, side); let beat = 0, i = 0;
+  const targets = phases.map(ph => 1.1 + ph * 2);
+  while (i < targets.length) {
+    const nb = Math.min(beat + DT / SPB, targets[i]);
+    st.frame(clip, { beat: nb, spb: SPB, dt: (nb - beat) * SPB || DT });
+    beat = nb;
+    if (beat >= targets[i] - 1e-9) { draw(cv, i); i++; }
+  }
+}
+const PH = [-0.5, -0.06, 0.05, 0.45, 1.05, 1.4];
+async function sheet() {
+  const root = document.getElementById('sheet'), cell = +(q.get('cell') || 200), list = pick();
+  for (const inst of list) {
+    const modes = q.get('mode') && q.get('mode') !== 'all' ? [q.get('mode')] : q.get('mode') === 'all' ? inst.modes : [inst.modes[0]];
+    for (const mode of modes) {
+      const side = q.get('side') || 'R';
+      const row = document.createElement('div'); row.className = 'row';
+      const lab = document.createElement('div'); lab.className = 'lab';
+      const nameBad = inst.name.length > 12 ? ' class="bad"' : '';
+      lab.innerHTML = `<b${nameBad}>${inst.name}</b>${inst.id}<br>${inst.acts.join('/')}・${mode}${side === 'L' ? '・左' : ''}<br>${inst.short}・${inst.theme}`;
+      row.append(lab);
+      const add = (w, h, label) => { const d = document.createElement('div'); d.className = 'cell'; const c = document.createElement('canvas'); c.width = w; c.height = h; d.append(c); const i = document.createElement('i'); i.textContent = label; d.append(i); row.append(d); return c.getContext('2d'); };
+      const portrait = add(Math.round(cell * 0.46), cell, '縦'), cells = PH.map(ph => add(cell, cell, 'ph ' + ph));
+      const land = add(Math.round(cell * 1.9), cell, '横');
+      snap(inst, mode, side, Math.round(cell * 0.46), cell, [-0.3], cv => portrait.drawImage(cv, 0, 0));
+      snap(inst, mode, side, cell, cell, PH, (cv, i) => cells[i].drawImage(cv, 0, 0));
+      snap(inst, mode, side, Math.round(cell * 1.9), cell, [0.3], cv => land.drawImage(cv, 0, 0));
+      root.append(row);
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+  window.count = list.length; window.done = true;
+}
+async function play(id) {
+  document.getElementById('sheet').remove();
+  const inst = SCENES.find(s => s.id === id || s.id.startsWith(id)); if (!inst) { document.body.textContent = 'not found'; return; }
+  const box = document.createElement('div'); box.id = 'play'; const cv = document.createElement('canvas'); box.append(cv); document.body.append(box);
+  const hud = document.createElement('div'); hud.id = 'hud'; hud.textContent = inst.name + '（タップで音）'; document.body.append(hud);
+  const { Music } = await import('../js/music.js'); const { playSfx } = await import('../js/sfx.js'); const { sfxFor } = await import('../js/stage.js');
+  const m = new Music(); let on = false; addEventListener('pointerdown', () => { m.unlock(); on = true; });
+  const st = new Stage(cv, { onSfx: name => on && playSfx(m, name) });
+  const fit = () => st.resize(innerWidth, innerHeight); fit(); addEventListener('resize', fit);
+  const mode = q.get('mode') || inst.modes[0], side = q.get('side') || 'R'; let t0 = performance.now(), last = t0, n = 0, fired = -1;
+  const loop = now => {
+    const beat = (now - t0) / 1000 / SPB, k = Math.floor(beat / 4), lb = beat - k * 4;
+    const clip = st._clip && st._clip.k === k ? st._clip : (st._clip = Object.assign(clipFor(inst, mode, side), { k }));
+    const hitIdx = lb >= 3.1 ? 1 : lb >= 1.1 ? 0 : -1;
+    if (on && hitIdx >= 0 && fired !== k * 2 + hitIdx) { fired = k * 2 + hitIdx; playSfx(m, sfxFor(inst, hitIdx + 1), undefined, { n: n++ }); }
+    st.frame(clip, { beat: lb, spb: SPB, dt: (now - last) / 1000 }); last = now;
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+// 見直し用：1場面 = 3コマ（当たる直前・1回目の直後・2回目のあと）を、横に何場面も並べる
+async function review() {
+  const root = document.getElementById('sheet'), cell = +(q.get('cell') || 110), per = +(q.get('per') || 6), list = pick();
+  root.style.gridTemplateColumns = `repeat(${per}, auto)`; root.style.gap = '6px 10px';
+  for (const inst of list) {
+    const mode = q.get('mode') && q.get('mode') !== 'all' ? (inst.modes.includes(q.get('mode')) ? q.get('mode') : inst.modes[0]) : inst.modes[0];
+    const box = document.createElement('div'); box.style.cssText = 'display:flex;flex-direction:column;gap:2px';
+    const lab = document.createElement('div'); lab.style.cssText = `font-size:11px;width:${cell * 3 + 4}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis`; lab.textContent = inst.name + '　' + inst.id; box.append(lab);
+    const r = document.createElement('div'); r.style.cssText = 'display:flex;gap:2px'; box.append(r);
+    const ctxs = [0, 1, 2].map(() => { const c = document.createElement('canvas'); c.width = cell; c.height = cell; r.append(c); return c.getContext('2d'); });
+    snap(inst, mode, q.get('side') || 'R', cell, cell, [-0.06, 0.1, 1.25], (cv, i) => ctxs[i].drawImage(cv, 0, 0));
+    root.append(box);
+    await new Promise(r => setTimeout(r, 0));
+  }
+  window.count = list.length; window.done = true;
+}
+q.get('play') ? play(q.get('play')) : q.get('review') ? review() : sheet();
+</script>
+</body>
+</html>
