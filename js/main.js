@@ -7,6 +7,8 @@ import { Voice } from './voice.js';
 import { MotionCam } from './cam.js';
 import { Stage, ACTS } from './stage.js';
 import { drawFigure, coachFrames } from './figure.js';
+import { drawBack, backLayout, BACK_BG } from './backcoach.js';
+import { preloadImgCoach } from './imgcoach.js';
 import { pool as realPool, CLIPS, ALL_REAL, REAL_BY_ID, realReady } from './real.js';
 import { imgPool, PHOTOS } from './photo.js';
 import { catalog, VERSIONS, LEVELS, levelOf, buildSession, REPS, PER_ROUND, PRACTICE, sceneIds, subOf } from './types.js';
@@ -113,9 +115,12 @@ class Duo {
     cx.setTransform(d, 0, 0, d, 0, 0);
     cx.fillStyle = '#000'; cx.fillRect(0, 0, w, h);
     const f = rf - Math.floor(rf), hh = Math.min(h * 0.66, w * 1.25), F = coachFrames(R, rf);
-    drawFigure(cx, F.J, { x: w / 2, y: h * 0.82, h: hh, view: t.m.view, ...F, mini: true, impact: f < 0.2 ? f / 0.2 : undefined });
-    // タイミングの輪（いっぱいになった瞬間に動く）
-    const rr = Math.min(w, h) * 0.13, rx = w - rr - 7, ry = rr + 7, flash = f < 0.12;
+    if (F.back) drawBack(cx, R, rf, { w, h, dpr: d, kind: 'panel', impact: f < 0.2 ? f / 0.2 : undefined });
+    else drawFigure(cx, F.J, { x: w / 2, y: h * 0.82, h: hh, view: t.m.view, ...F, mini: true, impact: f < 0.2 ? f / 0.2 : undefined });
+    // タイミングの輪（いっぱいになった瞬間に動く）。うしろ姿のお手本では、腕と反対の側（頭の横）に
+    const rr = Math.min(w, h) * (F.back ? 0.1 : 0.13), flash = f < 0.12;
+    const rx = F.back ? (R.side === 'L' ? w - rr - 7 : rr + 7) : w - rr - 7, ry = F.back ? h * 0.47 : rr + 7;
+    cx.setTransform(d, 0, 0, d, 0, 0);
     cx.lineWidth = 4; cx.strokeStyle = 'rgba(255,255,255,0.16)'; cx.beginPath(); cx.arc(rx, ry, rr, 0, Math.PI * 2); cx.stroke();
     cx.strokeStyle = flash ? '#ffffff' : '#ffd23f'; cx.beginPath(); cx.arc(rx, ry, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (flash ? 1 : f)); cx.stroke();
     if (flash) { cx.fillStyle = 'rgba(255,210,63,0.35)'; cx.beginPath(); cx.arc(rx, ry, rr, 0, Math.PI * 2); cx.fill(); }
@@ -334,7 +339,7 @@ function renderSettings() {
     <div class="tg"><span>体重（消費カロリーの目安に使います）</span><span><input type="number" id="vW" min="20" max="200" value="${s.weight}"> kg</span></div>
     </div>
     <p class="note">実写の映像は Wikimedia Commons で自由に使えるライセンス（CC0・パブリックドメイン・CC BY・CC BY-SA）で公開されているものを、切り出して使っています。イラスト・音楽・効果音は、このアプリがその場で描いて鳴らしています。体調に合わせて無理をせず、痛みを感じたらすぐに中止してください。</p>
-    <details class="credits"><summary>映像・写真のクレジット（映像 ${CLIPS.length}本・写真 ${PHOTOS.reduce((a, s) => a + s.images.length, 0)}枚）</summary><ul>${CLIPS.map(c => `<li><b>${esc(c.name)}</b><span>${esc(c.credit.author || '作者不明')}・${esc(c.credit.license)}・<a href="${esc(c.credit.page)}" target="_blank" rel="noopener">${esc(c.credit.file.replace(/^File:/, ''))}</a>（${esc(c.credit.changes || '切り出し・再エンコード')}）</span></li>`).join('')}${PHOTOS.flatMap(s => s.images.map(p => `<li><b>${esc(s.name)}</b><span>${esc(p.credit.author || '作者不明')}・${esc(p.credit.license)}・<a href="${esc(p.credit.page)}" target="_blank" rel="noopener">${esc(p.credit.file.replace(/^File:/, ''))}</a>（${esc(p.credit.changes || '縮小')}）</span></li>`)).join('')}</ul></details>
+    <details class="credits"><summary>映像・写真のクレジット（映像 ${CLIPS.length}本・写真 ${PHOTOS.reduce((a, s) => a + s.images.length, 0)}枚）</summary><ul>${CLIPS.map(c => `<li><b>${esc(c.name)}</b><span>${esc(c.credit.author || '作者不明')}・${esc(c.credit.license)}・<a href="${esc(c.credit.page)}" target="_blank" rel="noopener">${esc(c.credit.file.replace(/^File:/, ''))}</a>（${esc(c.credit.changes || '切り出し・再エンコード')}）</span></li>`).join('')}${PHOTOS.flatMap(s => (s.credit ? [s.credit] : s.images.map(p => p.credit)).map(cr => `<li><b>${esc(s.name)}</b><span>${esc(cr.author || '作者不明')}・${esc(cr.license)}・${cr.page ? `<a href="${esc(cr.page)}" target="_blank" rel="noopener">${esc(cr.file.replace(/^File:/, ''))}</a>` : esc(cr.file)}（${esc(cr.changes || '縮小')}）</span></li>`)).join('')}</ul></details>
     <button class="danger" id="vReset">記録をすべて消す</button>`;
 }
 $('#setBody').addEventListener('input', e => {
@@ -366,25 +371,29 @@ $('#setBody').addEventListener('click', e => {
    ========================================================================= */
 const stage = new Stage($('#stage'), { layer: $('#vl') });
 const pip = $('#pipc'), pipCtx = pip.getContext('2d');
-function fitStage() { stage.resize(innerWidth, innerHeight); const r = pip.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); if (r.width) { pip.width = Math.round(r.width * d); pip.height = Math.round(r.height * d); } }
+function fitStage() { stage.resize(innerWidth, innerHeight); const r = pip.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); if (r.width) { pip.width = Math.round(r.width * d); pip.height = Math.round(r.height * d); } measureCoachTop(); }
 addEventListener('resize', () => { if (mode === 'play') fitStage(); });
 
 // 大きなお手本（紹介・お手本5回・休憩）
+let coachTop = 0, coachTopAt = 0;          // うしろ姿のお手本：上の文字（種目名など）の下から描く
+function measureCoachTop() { const r = $('#play .ttl').getBoundingClientRect(); coachTop = r.height ? Math.round(r.bottom + 6) : 70; }
 function drawCoachStage(J, view, info) {
   const c = stage.ctx, d = stage.dpr, W = stage.W, H = stage.H;
   c.setTransform(d, 0, 0, d, 0, 0); c.globalAlpha = 1;
+  const f = info.rf - Math.floor(info.rf), imp = info.rf >= 0 && f < 0.2 ? f / 0.2 : undefined;
+  if (info.F && info.F.back) { drawBack(c, info.F.R, info.rf, { w: W, h: H, dpr: d, kind: 'stage', top: coachTop, impact: imp }); return; }
   c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
   const land = W > H * 1.15, h = land ? H * 0.7 : Math.min(H * 0.56, W * 1.0), cy = land ? H * 0.5 + h * 0.5 : H * 0.53 + h * 0.5;
-  const f = info.rf - Math.floor(info.rf);
-  drawFigure(c, J, { x: W / 2, y: cy, h, view, ...(info.F || {}), impact: info.rf >= 0 && f < 0.2 ? f / 0.2 : undefined });
+  drawFigure(c, J, { x: W / 2, y: cy, h, view, ...(info.F || {}), impact: imp });
 }
 function drawPip(J, view, f, flash, F) {
   const W = pip.width, H = pip.height; if (!W) return;
   const c = pipCtx; c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, W, H);
-  const r = W / 2, lw = Math.max(4, W * 0.045);
-  c.fillStyle = '#000'; c.beginPath(); c.arc(r, r, r - lw / 2, 0, Math.PI * 2); c.fill();
+  const r = W / 2, lw = Math.max(4, W * 0.045), back = F && F.back;
+  c.fillStyle = back ? BACK_BG : '#000'; c.beginPath(); c.arc(r, r, r - lw / 2, 0, Math.PI * 2); c.fill();
   c.save(); c.beginPath(); c.arc(r, r, r - lw, 0, Math.PI * 2); c.clip();
-  drawFigure(c, J, { x: r, y: H * 0.88, h: H * 0.74, view, mini: true, ...(F || {}), ghosts: F && F.ghosts.slice(-2), impact: f < 0.2 ? f / 0.2 : undefined });
+  if (back) { const dd = W / (pip.clientWidth || W); drawBack(c, F.R, F.rf, { w: W / dd, h: H / dd, dpr: dd, kind: 'pip', impact: f < 0.2 ? f / 0.2 : undefined }); }
+  else drawFigure(c, J, { x: r, y: H * 0.88, h: H * 0.74, view, mini: true, ...(F || {}), ghosts: F && F.ghosts.slice(-2), impact: f < 0.2 ? f / 0.2 : undefined });
   c.restore();
   // タイミングの輪
   c.lineWidth = lw; c.strokeStyle = 'rgba(255,255,255,0.18)'; c.beginPath(); c.arc(r, r, r - lw / 2, 0, Math.PI * 2); c.stroke();
@@ -392,8 +401,14 @@ function drawPip(J, view, f, flash, F) {
   if (flash) { c.fillStyle = 'rgba(255,210,63,0.25)'; c.beginPath(); c.arc(r, r, r - lw, 0, Math.PI * 2); c.fill(); }
 }
 // 場面が始まるとき：大きなお手本が右下の小窓へ縮んでいく
-function drawFly(J, view, k) {
+function drawFly(J, view, k, F) {
   const c = stage.ctx, d = stage.dpr, W = stage.W, H = stage.H, pr = pip.getBoundingClientRect(); if (!pr.width) return;
+  if (F && F.back) {        // うしろ姿：全画面の配置 → 小窓の配置へ
+    const e = 1 - Math.pow(1 - k, 3), A = backLayout(F.R.m, 'stage', W, H, coachTop), B = backLayout(F.R.m, 'pip', pr.width, pr.height);
+    const L = { s: A.s + (B.s - A.s) * e, ox: A.ox + (pr.left + B.ox - A.ox) * e, oy: A.oy + (pr.top + B.oy - A.oy) * e };
+    drawBack(c, F.R, F.rf, { w: W, h: H, dpr: d, ...L, bg: false, label: false, alpha: 1 - e * 0.8 });
+    return;
+  }
   const land = W > H * 1.15, h0 = land ? H * 0.7 : Math.min(H * 0.56, W * 1.0), y0 = land ? H * 0.5 + h0 * 0.5 : H * 0.53 + h0 * 0.5;
   const e = 1 - Math.pow(1 - k, 3), h = h0 + (pr.height * 0.74 - h0) * e, x = W / 2 + (pr.left + pr.width / 2 - W / 2) * e, y = y0 + (pr.top + pr.height * 0.88 - y0) * e;
   c.setTransform(d, 0, 0, d, 0, 0); c.globalAlpha = 1 - e * 0.85;
@@ -415,9 +430,12 @@ function updateHud(info) {
   const nT = run.plan.types.length;
   setText($('#hPh'), 'ph', (labels[info.phase] || '') + (nT > 1 ? `　${blk.i + 1}/${nT}種目` : ''));
   setText($('#hName'), 'name', t.name);
-  $('#hName').style.visibility = info.phase === 'intro' || info.phase === 'rest' ? 'hidden' : 'visible';
-  // 紹介・休憩の見出し
-  const titled = info.phase === 'intro' || info.phase === 'rest';
+  const backc = !!(info.F && info.F.back) && ['rest', 'intro', 'practice'].includes(info.phase);
+  $('#play').classList.toggle('backc', backc);
+  if (backc && now - coachTopAt > 700) { coachTopAt = now; measureCoachTop(); }   // 種目名が2行になったときなど
+  $('#hName').style.visibility = !backc && (info.phase === 'intro' || info.phase === 'rest') ? 'hidden' : 'visible';
+  // 紹介・休憩の見出し（うしろ姿のお手本では、お手本の上の動きの名前が見出しのかわり）
+  const titled = !backc && (info.phase === 'intro' || info.phase === 'rest');
   $('#hTitle').hidden = !titled;
   if (titled) {
     setText($('#hTitleB'), 'tb', info.phase === 'rest' ? `次は「${t.name}」` : t.name);
@@ -441,7 +459,7 @@ function updateHud(info) {
     bigEl.innerHTML = big ? `${esc(big)}${sub ? `<small>${esc(sub)}</small>` : ''}` : '';
     if (big) { bigEl.classList.remove('pop'); void bigEl.offsetWidth; bigEl.classList.add('pop'); }
   }
-  const hints = { intro: t.m.cue, practice: 'まねしてみよう', outro: 'ナイス！' };
+  const hints = { intro: t.m.cue, practice: 'まねしてみよう', outro: 'ナイス！', rest: backc ? `次の場面：${subOf(t, look())} ほか` : '' };
   setText($('#hHint'), 'hint', now < hintUntil ? hintText : (hints[info.phase] || ''));
   $('#hRep').textContent = info.rep; $('#hOf').textContent = `/${REPS}回`;
   $('#hProg').style.width = (Math.min(1, info.beat / run.total) * 100).toFixed(1) + '%';
@@ -456,6 +474,7 @@ async function startSession(opts) {
 }
 async function beginPlan(plan, opts) {
   const s = store.s;
+  for (const t of plan.types) preloadImgCoach(t.m.key);   // 3D人形のお手本の画像を先に読みこむ
   $('#setupWrap').hidden = true; show('play'); fitStage();
   voice.on = s.voice; voice.rate = s.rate;
   music.setStyle(plan.music, opts.seed || 1); music.setVolumes(s.music, s.sfx);

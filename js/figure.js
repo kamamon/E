@@ -8,6 +8,7 @@
    ========================================================================= */
 import { qrot } from './motion.js';
 import { jointsAtRep } from './motions.js';
+import { hasBack } from './backcoach.js';
 
 const TAU = Math.PI * 2;
 // 体の太さ（半径・メートル）
@@ -146,7 +147,9 @@ function arrow(c, pts, lw, col, alpha) {
 /* ---------- お手本の姿勢ひとそろい（いま・跡・先・次に当たる姿勢） ----------
    R: rig、rf: 回数の座標（接触 j は rf = j） */
 export function coachFrames(R, rf) {
-  const J = jointsAtRep(R, rf), up = Math.ceil(rf - 1e-6), next = up <= rf + 1e-6 ? rf + 1 : up;
+  const J = jointsAtRep(R, rf);
+  if (hasBack(R.m)) return { J, R, rf, back: true, ghosts: [], future: [], act: R.m.act };   // うしろ姿のお手本（backcoach.js）
+  const up = Math.ceil(rf - 1e-6), next = up <= rf + 1e-6 ? rf + 1 : up;
   const ghosts = GHOSTS.map(d => jointsAtRep(R, rf + d));
   const future = []; for (const d of FUTURE) { if (rf + d >= next - 0.02) break; future.push(jointsAtRep(R, rf + d)); }
   return { J, ghosts, future, contact: jointsAtRep(R, next), toNext: next - rf, act: R.m && R.m.act };

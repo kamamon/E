@@ -1,7 +1,7 @@
 // オフラインでも開けるようにするサービスワーカー（ネット優先・つながらない時はキャッシュ。実写の映像は一度見たら保存）
-const V = 'immersefit-v4', CLIPS = 'immersefit-clips-v1';
+const V = 'immersefit-v9', CLIPS = 'immersefit-clips-v1';
 const SCN = ['hit', 'hit2', 'punch', 'push', 'pull', 'lift', 'stir', 'wipe', 'clap', 'throw', 'squat', 'knee', 'kick', 'stomp', 'jump', 'step', 'finale', 'registry', 'index'].map(n => `./js/scenes/${n}.js`);
-const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', ...['main', 'store', 'music', 'voice', 'cam', 'stage', 'kit', 'sfx', 'figure', 'types', 'motions', 'exercise', 'motion', 'moves', 'run', 'real', 'clips', 'photo', 'photos', 'hits', 'sfxui', 'mine', 'mineui', 'minereg', 'zip', 'hitworker'].map(n => `./js/${n}.js`), ...SCN];
+const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', ...['main', 'store', 'music', 'voice', 'cam', 'stage', 'kit', 'sfx', 'figure', 'backcoach', 'imgcoach', 'figdata', 'types', 'motions', 'exercise', 'motion', 'moves', 'run', 'real', 'clips', 'photo', 'photos', 'hits', 'sfxui', 'mine', 'mineui', 'minereg', 'zip', 'hitworker'].map(n => `./js/${n}.js`), ...SCN, ...['hit', 'recoil', 'earcock', 'ear', 'lift', 'cock', 'rise', 'swing', 'dn30', 'dn45', 'dn70'].map(n => `./coach/chop-${n}.jpg`)];
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V && k !== CLIPS).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

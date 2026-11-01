@@ -78,8 +78,14 @@ export function catalog() {
     ms.forEach((x, i) => {
       const packs = makePacks(x.m, n[i], x.pool, hashStr(V.key + x.m.key));
       const rpool = realPoolFor(x.m), rpacks = rpool.length ? makePacks(x.m, n[i], rpool, hashStr('R' + V.key + x.m.key)) : null;
+      // その動きのために作った場面（photos.js の for）は、どの種目でも最初に出す
+      const pin = rpool.filter(s => s.photo && s.v.set.for && s.v.set.for.includes(x.m.key));
       packs.forEach((sc, j) => {
-        const rs = rpacks ? rpacks[j] : [];
+        let rs = rpacks ? rpacks[j] : [];
+        if (pin.length) {   // 種目ごとに始まりの場面をずらす（どの種目も全部の場面を通る）
+          const k = j % pin.length, pj = pin.slice(k).concat(pin.slice(0, k));
+          rs = [...pj, ...rs.filter(s => !pin.includes(s))].slice(0, Math.max(PER_ROUND, pin.length));
+        }
         const t = {
           id: `${V.pre}-${x.m.key}-${String(j + 1).padStart(2, '0')}`, ver: V.key, motion: x.m.key, m: x.m,
           name: x.m.name, act: x.m.act, mode: x.m.mode, lvl: x.m.lvl, met: x.m.met, imp: x.m.imp,

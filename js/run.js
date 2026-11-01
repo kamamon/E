@@ -18,7 +18,7 @@ const NUM = ['いち', 'に', 'さん', 'し', 'ご'];
 const FINALE_INST = { id: 'finale', tpl: FINALE, v: {}, name: 'ラスト5回！', short: 'ラスト', acts: [], modes: [], theme: 'party' };
 
 export class Run {
-  // env: { music, stage, voice, showLen(4|2), drawCoach(J, view, info), drawPip(J, view, f, flash), drawFly(J, view, k), hud(info), onTypeDone(t), onSync(ok), cam }
+  // env: { music, stage, voice, showLen(4|2), drawCoach(J, view, info), drawPip(J, view, f, flash, F), drawFly(J, view, k, F), hud(info), onTypeDone(t), onSync(ok), cam }
   constructor(plan, env) {
     this.plan = plan; this.env = env; this.blocks = []; let b = 0;
     const showLen = env.showLen === 2 ? 2 : 4, nShow = SCENE_REPS / showLen;
@@ -138,7 +138,7 @@ export class Run {
         info.phase = clip === blk.finale ? 'finale' : 'scene'; info.clip = clip; info.round = clip.round;
         info.s = E.stage.frame(clip, { beat, spb, dt, p: pAt(R, rf), x: xAt(R, rf) });
         // 場面が始まった直後：大きなお手本が右下へ小さくなっていく
-        if (c0 && beat < c0.b0 + 1.2) E.drawFly && E.drawFly(J, view, Math.max(0, (beat - c0.b0) / 1.2));
+        if (c0 && beat < c0.b0 + 1.2) E.drawFly && E.drawFly(J, view, Math.max(0, (beat - c0.b0) / 1.2), F);
         E.drawPip(J, view, f, beat - blk.H(Math.max(0, rep - 1)) < 0.25 && rep > 0, F);
       }
     } else {

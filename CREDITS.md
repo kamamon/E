@@ -170,3 +170,34 @@ CC BY-SA の映像を加工したもの（`clips/` 内の該当ファイル）�
 | 阿波おどり | step-awaodori-a.jpg | [Awa-odori 2008 Tokushima 03.jpg](https://commons.wikimedia.org/wiki/File%3AAwa-odori_2008_Tokushima_03.jpg) | Rosino | CC BY-SA 2.0 ([license](https://creativecommons.org/licenses/by-sa/2.0)) |
 | 阿波おどり | step-awaodori-b.jpg | [Koenji Awa Odori dancers.jpg](https://commons.wikimedia.org/wiki/File%3AKoenji_Awa_Odori_dancers.jpg) | KQuhen | CC BY-SA 4.0 ([license](https://creativecommons.org/licenses/by-sa/4.0)) |
 | 阿波おどり | step-awaodori-c.jpg | [Women wearing Kasa hats dance the Awa Odori - Aug 13, 2018 (1).jpg](https://commons.wikimedia.org/wiki/File%3AWomen_wearing_Kasa_hats_dance_the_Awa_Odori_-_Aug_13%2C_2018_%281%29.jpg) | Ann Lee | CC BY-SA 2.0 ([license](https://creativecommons.org/licenses/by-sa/2.0)) |
+
+## Canva で作った画像（お手本・場面）
+
+次の画像は、このアプリのために Canva の画像生成（AI）で作ったものです（他の作品の写しではありません）。
+お手本は、体・頭・左腕を1枚にそろえて、右腕のまわりだけを各ポーズの画像から合成しています。ほかの動きのお手本は、左右対称の基準の1枚に、右腕・右脚のポーズの層（左は左右反転）を重ねて動かしています。
+
+| 使う所 | ファイル | 内容 |
+|---|---|---|
+| お手本「片手で振り下ろす」 | coach/chop-*.jpg（11枚） | 3D人形のうしろ姿（当たる → 引く → 耳の横 → 頭の上 → 上げきる → 振りおろす途中×4） |
+| 場面「きゅうりを切る」 | photos/hit-cucumber-a〜e.jpg | まな板のきゅうりが1切れずつ切れていく5枚 |
+| 場面「氷を割る」 | photos/hit-ice-a〜e.jpg | 氷のかたまりにひびが入り、割れて、くだける5枚 |
+| 場面「くいを打つ」 | photos/hit-stake-a〜e.jpg | 床の木のくいが少しずつ沈んでいく5枚 |
+| 場面「空き缶をつぶす」 | photos/hit-can-a〜e.jpg | 空き缶が少しずつつぶれて、ぺちゃんこになる5枚 |
+| 場面「瓦を割る」 | photos/hit-tile-a〜e.jpg | 積んだ瓦が上から1枚ずつ割れていく5枚 |
+| お手本（ほかの動き） | coach/fig-base.jpg | 3D人形のうしろ姿の基準（腕を下ろして立つ・左右対称） |
+| お手本（ほかの動き） | coach/fig-*.webp | 右腕（右脚）のポーズの層。基準に重ね、左は左右反転して使う |
+| お手本（ほかの動き） | coach/fig-*.jpg | 体ごと変わるポーズ（ひねる・横にたおす・前かがみ・頭の上で回す など） |
+| 場面「旗をあげる」 | photos/pull-flag-a〜e.jpg | 旗ざおの黄色い旗が、1回ごとに上がっていく5枚 |
+| 場面「花火をあげる」 | photos/lift-fireworks-a〜e.jpg | 夜の川の空に、1回ごとに花火が1つずつ開いていく5枚 |
+| 場面「障子をやぶる」 | photos/punch-shoji-a〜e.jpg | 障子に1回ごとに穴が1つずつあいていく5枚 |
+| 場面「積み木をつむ」 | photos/squat-blocks-a〜e.jpg | 積み木が1回ごとに1つずつ高く積み上がる5枚 |
+| 場面「砂浜に足あと」 | photos/step-sand-a〜e.jpg | 砂浜に1回ごとに足あとが2つずつ増えていく5枚 |
+| 場面「ゴールにシュート」 | photos/kick-goal-a〜e.jpg | サッカーゴールに1回ごとにボールが1つずつ入る5枚 |
+| 場面「ちょうちんをともす」 | photos/clap-lanterns-a〜e.jpg | 夕暮れの通りのちょうちんが、1回ごとに1つずつ灯る5枚 |
+| 場面「雪に足あと」 | photos/stomp-snow-a〜e.jpg | 雪原に1回ごとに足あとが2つずつ増えていく5枚 |
+| 場面「ポップコーンをはじく」 | photos/jump-popcorn-a〜e.jpg | フライパンのとうもろこしが、1回ごとにはじけてポップコーンになる5枚 |
+| 場面「ドミノをたおす」 | photos/push-domino-a〜e.jpg | 床のドミノが、1回ごとに手前から奥へ倒れていく5枚 |
+| 場面「ダーツを投げる」 | photos/throw-darts-a〜e.jpg | ダーツの的に1回ごとに1本ずつ刺さり、最後はまん中に当たる5枚 |
+| 場面「生クリームをあわだてる」 | photos/stir-cream-a〜e.jpg | ボウルの生クリームが、1回ごとにあわ立ってツノが立つ5枚 |
+| 場面「石段をのぼる」 | photos/knee-stairs-a〜e.jpg | 杉林の石段を、1回ごとに鳥居へ近づいていく5枚（1枚の画像を少しずつ拡大） |
+| 場面「くもった窓をふく」 | photos/wipe-fog-a〜e.jpg | くもった窓を1回ごとに1段ずつふいて、湖の景色が見えてくる5枚（くもりは画像処理で追加） |

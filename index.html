@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>IMMERSE FIT</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="白い線のお手本をまねして動くと、実写の映像と動きがぴったり重なる。没入型エクササイズ。全身・上半身・下半身・腕だけ、各500種目。">
+<meta name="description" content="お手本をまねして動くと、実写の映像と動きがぴったり重なる。没入型エクササイズ。全身・上半身・下半身・腕だけ、各500種目。">
 <meta name="theme-color" content="#0d0b1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -15,7 +15,7 @@
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@900&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
 <style>
 /* 黒いステージに白いお手本、場面はあざやかに。UI は上下に寄せて、真ん中は場面のために空ける */
 :root {
@@ -187,6 +187,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent2); o
   .big { top: 46%; left: 21%; }
   .hint { left: auto; right: 3%; bottom: auto; top: 44%; width: 30%; text-align: left; padding: 0; }
 }
+/* うしろ姿のお手本（灰色の地）：上下の帯は地の色に合わせ、回数の数字は頭の横（腕と反対の側）へ */
+#play.backc .hud-top { background: linear-gradient(180deg, rgba(34,33,29,0.6), rgba(34,33,29,0)); }
+#play.backc .hud-bot { background: linear-gradient(0deg, rgba(34,33,29,0.6), rgba(34,33,29,0)); }
+#play.backc .big:not(.small) { left: 13%; top: 47%; text-shadow: 0 0 30px rgba(255,255,255,0.35), 0 4px 20px rgba(0,0,0,.35); }
 @media (orientation: landscape) and (max-height: 560px) {
   .cap { top: calc(var(--st) + 10px); }
   .hud-top { padding-bottom: 10px; }
@@ -333,7 +337,7 @@ label.ghost:focus-within { outline: 2px solid var(--accent2); outline-offset: 2p
 <section id="home">
   <div class="hscroll"><div class="wrap">
     <div class="headrow"><h1 class="logo">IMMERSE FIT</h1><button class="helpbtn" id="helpBtn"><i>?</i>遊び方</button></div>
-    <p class="tag">白い線のお手本をまねして動くと、<wbr>本物の映像と<wbr>動きがぴったり重なる。</p>
+    <p class="tag">お手本をまねして動くと、<wbr>本物の映像と<wbr>動きがぴったり重なる。</p>
     <div class="stats" id="stats"></div>
     <div class="duo" id="hero"><div class="duo-c"><canvas></canvas><span class="dl">お手本</span><b></b></div><div class="arrow" aria-hidden="true">▶</div><div class="duo-s"><div class="vl" hidden><div class="vbg"></div></div><canvas></canvas><span class="dl">場面</span><b></b></div></div>
     <p class="how"><b>左のお手本をまねすると、<wbr>右の映像の「当たる瞬間」と重なります。</b><wbr>1種目は約1分・50回。</p>
@@ -391,7 +395,7 @@ label.ghost:focus-within { outline: 2px solid var(--accent2); outline-offset: 2p
   <h2 id="helpT">遊び方</h2>
   <div class="duo" id="helpDuo"><div class="duo-c"><canvas></canvas><span class="dl">お手本</span><b></b></div><div class="arrow" aria-hidden="true">▶</div><div class="duo-s"><div class="vl" hidden><div class="vbg"></div></div><canvas></canvas><span class="dl">場面</span><b></b></div></div>
   <ol class="steps">
-    <li><span><b>黒い画面の、白い線のお手本をまねして動きます。</b>まずはお手本といっしょに5回。</span></li>
+    <li><span><b>お手本をまねして動きます。</b>まずはお手本といっしょに5回。</span></li>
     <li><span><b>続けて実写の映像に切りかわります。動きはそのまま。</b>あなたが動く瞬間に、映像の中でも当たる（太鼓が鳴る・まきが割れる…）。</span></li>
     <li><span><b>場面は4回ごとに変わります。動きはそのまま。</b>5つの場面を2巡して、ラスト5回で50回（約1分）。</span></li>
     <li><span><b>右下の丸がタイミング。</b>輪がいっぱいになった瞬間に動きます。</span></li>
